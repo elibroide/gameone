@@ -1,0 +1,80 @@
+<!DOCTYPE html>  
+<html>
+
+<head>  
+    <meta charset="utf-8" />
+    <title> Game One </title>
+
+    <script type="text/javascript" src="js/phaser.js"></script>
+    <script src="http://code.jquery.com/jquery-1.11.0.min.js"></script> 
+	<script src="http://code.jquery.com/jquery-migrate-1.2.1.min.js"></script>
+    <script type="text/javascript" src="js/socket.io-1.0.6.js"></script>
+    <script type="text/javascript" src="js/socketiotest.js"></script>
+</head>
+
+<body>
+
+    <p> Hello 3 </p>
+    <div>
+    	<input type="text" id="tbxSend" target="#btnSend" />
+    	<button type="button" id="btnSend">Send</button>
+	</div>	
+    <div id="gameone"> 
+		<ul id="gameonetext">
+		</ul>
+    </div>
+
+    <script type="text/javascript">
+        // socketiotest.js
+        var socket = io("http://127.0.0.1:3000");
+        var name = "";
+
+        function writeText(name, text){
+            $('#gameonetext').append("<li><strong>" + name + ":</strong> " + text + "</li>");
+        }
+        function clearText(){
+            $('#tbxSend').val('');
+        }
+
+        socket.on('message', function(message, err){
+             writeText(message.name, message.text);
+        });
+        socket.on('connected', function(){
+            writeText('System', 'Hi, please enter your name');
+        });
+        socket.on('disconnected', function(){
+            if(!name){
+                writeText('System', 'You are disconnected, enter your name please');
+                return;
+            }
+            socket.emit("username", { name: name });
+        });
+        socket.on('userDisconnected', function(data){
+            writeText('System', data.name + ' has disconnected');
+        });
+
+        $("#btnSend").on("click", function(){
+            var text = $("#tbxSend").val();
+            if(!text){
+                $("#tbxSend").attr('placeholder', 'please write something');
+                return;           
+            }
+            if(name){
+                socket.emit("message", { text: text });
+                clearText();
+            }
+            else{
+                name = text;
+                socket.emit("username", { name: text });
+                clearText();
+            }
+        });
+        $("#tbxSend").keyup(function(event){
+            if(event.keyCode == 13){
+                event.preventDefault();
+                $("#btnSend").click();
+            }
+        });
+    </script>
+</body>  
+</html>
